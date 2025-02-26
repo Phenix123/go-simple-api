@@ -23,20 +23,18 @@ import (
 )
 
 type Server struct {
-	Env  string
-	Port string
-	h    *handlers.Handlers
+	cfg *config.Config
+	h   *handlers.Handlers
 }
 
-func New(env string, port string) *Server {
+func NewServer(cfg *config.Config) *Server {
 	return &Server{
-		Env:  env,
-		Port: port,
+		cfg: cfg,
 	}
 }
 
 func (s *Server) Run() {
-	dbConn, err := db.InitDB()
+	dbConn, err := db.InitDB(s.cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,11 +45,11 @@ func (s *Server) Run() {
 	s.registerRoutes(r)
 
 	server := &http.Server{
-		Addr:    ":" + s.Port, // Define your address
+		Addr:    ":" + s.cfg.Port, // Define your address
 		Handler: r,
 	}
 
-	fmt.Println("Server start at localhost:" + s.Port)
+	fmt.Println("Server start at localhost:" + s.cfg.Port)
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -87,7 +85,7 @@ func (s *Server) registerRoutes(r *gin.Engine) {
 		api.GET("/orders/:id", s.h.GetOrderById())
 	}
 
-	if s.Env != config.PROD_ENV {
+	if s.cfg.Env != config.PROD_ENV {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 }

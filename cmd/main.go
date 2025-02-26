@@ -7,6 +7,6 @@ import (
 
 func main() {
 	cfg := config.New()
-	server := internal.New(cfg.Env, cfg.Port)
+	server := internal.NewServer(cfg)
 	server.Run()
 }
