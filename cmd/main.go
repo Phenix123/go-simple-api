@@ -1,10 +1,12 @@
 package main
 
 import (
+	"orders/config"
 	"orders/internal"
 )
 
 func main() {
-	server := internal.New("a", "8080")
+	cfg := config.New()
+	server := internal.New(cfg.Env, cfg.Port)
 	server.Run()
 }

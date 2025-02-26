@@ -2,25 +2,10 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"log"
 	"net/http"
-	_ "orders/cmd/docs"
-	"orders/internal/services"
 	"strconv"
 )
-
-func New(s services.OrderServiceInterface) *Handlers {
-	return &Handlers{s: s}
-}
-
-func (h *Handlers) RegisterRoutes(r *gin.Engine) {
-	r.GET("/api/v1/orders", h.GetOrders())
-	r.GET("/api/v1/orders/:id", h.GetOrderById())
-
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-}
 
 // @Summary Получить заказы
 // @Description Возвращает список всех заказов

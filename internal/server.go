@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"log"
 	"net/http"
+	"orders/config"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,11 +48,16 @@ func (s Server) Run() {
 
 	handler.RegisterRoutes(r)
 
+	if s.Env != config.PROD_ENV {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
+
 	server := &http.Server{
 		Addr:    ":" + s.Port, // Define your address
 		Handler: r,
 	}
 
+	fmt.Println("Server start at localhost:" + s.Port)
 	// Run server in a goroutine so it doesn't block
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
