@@ -9,6 +9,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"log"
 	"net/http"
+	_ "orders/cmd/docs"
 	"orders/config"
 	"os"
 	"os/signal"
@@ -24,6 +25,7 @@ import (
 type Server struct {
 	Env  string
 	Port string
+	h    *handlers.Handlers
 }
 
 func New(env string, port string) *Server {
@@ -33,24 +35,16 @@ func New(env string, port string) *Server {
 	}
 }
 
-func (s Server) Run() {
+func (s *Server) Run() {
 	dbConn, err := db.InitDB()
 	if err != nil {
 		log.Fatal(err)
 	}
 	r := gin.Default()
 
-	repo := repositories.New(dbConn)
+	s.h = handlers.New(services.New(repositories.New(dbConn)))
 
-	service := services.New(repo)
-
-	handler := handlers.New(service)
-
-	handler.RegisterRoutes(r)
-
-	if s.Env != config.PROD_ENV {
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
+	s.registerRoutes(r)
 
 	server := &http.Server{
 		Addr:    ":" + s.Port, // Define your address
@@ -58,7 +52,7 @@ func (s Server) Run() {
 	}
 
 	fmt.Println("Server start at localhost:" + s.Port)
-	// Run server in a goroutine so it doesn't block
+
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Printf("ListenAndServe() error: %v\n", err)
@@ -82,5 +76,18 @@ func (s Server) Run() {
 		fmt.Printf("Server Shutdown Failed: %v\n", err)
 	} else {
 		fmt.Println("Server exited gracefully")
+	}
+}
+
+func (s *Server) registerRoutes(r *gin.Engine) {
+
+	api := r.Group("api/v1")
+	{
+		api.GET("/orders", s.h.GetOrders())
+		api.GET("/orders/:id", s.h.GetOrderById())
+	}
+
+	if s.Env != config.PROD_ENV {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 }
